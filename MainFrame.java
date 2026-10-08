@@ -6,49 +6,42 @@ public class MainFrame extends JFrame {
     private TableRender grades;
     private Settings settings;
 
-    public MainFrame() {
+    public MainFrame(User user) {
 
         setTitle("Acadex");
-        setSize(1200,700);
+        setSize(1200, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
 
-        dashboard = new Dashboard();
+        dashboard =
+                new Dashboard(
+                        user.getUsername(),
+                        user.getSemester()
+                );
+
         grades = new TableRender();
         settings = new Settings();
 
-        JTabbedPane tabs = new JTabbedPane();
+        JTabbedPane tabs =
+                new JTabbedPane();
 
-        tabs.addTab("Dashboard", dashboard);
-        tabs.addTab("Grades", grades);
-        tabs.addTab("Settings", settings);
+        tabs.addTab(
+                "Dashboard",
+                dashboard.getContentPane()
+        );
+
+        tabs.addTab(
+                "Grades",
+                grades.getContentPane()
+        );
+
+        tabs.addTab(
+                "Settings",
+                settings
+        );
 
         add(tabs);
 
         setVisible(true);
-    }
-
-    public boolean showConfirmationDialog(String msg){
-
-        int result = JOptionPane.showConfirmDialog(
-                this,
-                msg,
-                "Confirm",
-                JOptionPane.YES_NO_OPTION
-        );
-
-        return result == JOptionPane.YES_OPTION;
-    }
-
-    public void showSuccessMessage(String msg){
-        JOptionPane.showMessageDialog(this,msg);
-    }
-
-    public void showErrorMessage(String msg){
-        JOptionPane.showMessageDialog(
-                this,
-                msg,
-                "Error",
-                JOptionPane.ERROR_MESSAGE
-        );
     }
 }
