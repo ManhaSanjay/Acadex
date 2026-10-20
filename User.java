@@ -1,74 +1,32 @@
+
 public class User {
+    private final int id;
+    private final String username;
+    private final String displayName;
+    private final String role;
+    private final String sessionToken;
 
-    private int userId;
-    private String username;
-    private String passwordHash;
-    private String role;
-    private String semester;
+    public User(int id, String username, String displayName, String role) {
+        this(id, username, displayName, role, "");
+    }
 
-    public User(
-            int userId,
-            String username,
-            String passwordHash,
-            String role,
-            String semester) {
-
-        this.userId = userId;
+    public User(int id, String username, String displayName,
+                String role, String sessionToken) {
+        this.id = id;
         this.username = username;
-        this.passwordHash = passwordHash;
+        this.displayName = displayName;
         this.role = role;
-        this.semester = semester;
+        this.sessionToken = sessionToken;
     }
 
-    public User(
-            String username,
-            String passwordHash,
-            String role,
-            String semester) {
+    public int getId() { return id; }
+    public String getUsername() { return username; }
+    public String getDisplayName() { return displayName; }
+    public String getRole() { return role; }
+    public String getSessionToken() { return sessionToken; }
 
-        this.username = username;
-        this.passwordHash = passwordHash;
-        this.role = role;
-        this.semester = semester;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public String getPasswordHash() {
-        return passwordHash;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public String getSemester() {
-        return semester;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public void setPasswordHash(String passwordHash) {
-        this.passwordHash = passwordHash;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public void setSemester(String semester) {
-        this.semester = semester;
+    public boolean isAdmin() {
+        return "ADMIN".equals(role);
     }
 }
+
