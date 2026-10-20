@@ -1,0 +1,13 @@
+import javax.swing.*;
+import java.awt.*;
+import java.util.*;
+
+public class AdminPanel extends JPanel {
+    private final UserDAO dao=new UserDAO(); private JTable table;
+    public AdminPanel(){setLayout(new BorderLayout(8,8));setBorder(BorderFactory.createEmptyBorder(12,12,12,12));JPanel actions=new JPanel(new FlowLayout(FlowLayout.LEFT));JButton refresh=new JButton("Refresh users");refresh.addActionListener(e->load());JButton add=new JButton("Add user");add.addActionListener(e->addUser());JButton delete=new JButton("Delete selected user");delete.addActionListener(e->deleteUser());JButton backup=new JButton("Back up database");backup.addActionListener(e->backup());actions.add(refresh);actions.add(add);actions.add(delete);actions.add(backup);add(actions,BorderLayout.NORTH);table=new JTable();add(new JScrollPane(table),BorderLayout.CENTER);JLabel note=new JLabel("Admin tools: account management and local database backup. The built-in admin account cannot be deleted.");add(note,BorderLayout.SOUTH);load();}
+    private void load(){try{table=TableRender.table(new String[]{"ID","Username","Display name","Role"},dao.allUsers());JScrollPane old=(JScrollPane)getComponent(1);remove(old);add(new JScrollPane(table),BorderLayout.CENTER);revalidate();repaint();}catch(Exception e){error(e);}}
+    private void addUser(){JTextField username=new JTextField(),name=new JTextField();JPasswordField password=new JPasswordField();JComboBox<String> role=new JComboBox<>(new String[]{"STUDENT","ADMIN"});Object[] f={"Username",username,"Display name",name,"Temporary password",password,"Role",role};if(JOptionPane.showConfirmDialog(this,f,"Add user",JOptionPane.OK_CANCEL_OPTION)!=JOptionPane.OK_OPTION)return;try{if(username.getText().isBlank()||name.getText().isBlank()||password.getPassword().length==0)throw new IllegalArgumentException("All fields are required.");dao.addUser(username.getText(),new String(password.getPassword()),name.getText(),(String)role.getSelectedItem());load();}catch(Exception e){error(e);}}
+    private void deleteUser(){String id=TableRender.selectedId(table);if(id==null){JOptionPane.showMessageDialog(this,"Select a user first.");return;}if(JOptionPane.showConfirmDialog(this,"Delete selected user?","Confirm",JOptionPane.YES_NO_OPTION)!=JOptionPane.YES_OPTION)return;try{dao.deleteUser(Integer.parseInt(id));load();}catch(Exception e){error(e);}}
+    private void backup(){try{JOptionPane.showMessageDialog(this,"Backup created:\n"+BackupService.backup());}catch(Exception e){error(e);}}
+    private void error(Exception e){JOptionPane.showMessageDialog(this,e.getMessage(),"Admin",JOptionPane.ERROR_MESSAGE);}
+}

@@ -1,77 +1,13 @@
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+import java.util.*;
 
-CREATE TABLE grades (
-    subject TEXT PRIMARY KEY,
-    series1 REAL,
-    series2 REAL,
-    semester_exam REAL
-);
-
-
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-
-public class DatabaseManager {
-
-    private static final String URL = "jdbc:sqlite:grades.db";
-
-    public static Connection connect() throws SQLException {
-        return DriverManager.getConnection(URL);}}
-
-
-import java.sql.Connection;
-import java.sql.Statement;
-
-public class CreateTable {
-
-    public static void createTable() {
-        String sql = """
-            CREATE TABLE IF NOT EXISTS grades (
-                subject TEXT PRIMARY KEY,
-                series1 REAL,
-                series2 REAL,
-                semester_exam REAL
-            );
-            """;
-
-        try (Connection conn = DatabaseManager.connect();
-             Statement stmt = conn.createStatement()) {
-
-            stmt.execute(sql);
-            System.out.println("Table created successfully.");
-
-        } catch (Exception e) {
-            e.printStackTrace();}}}
-
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-
-public class GradeDAO {
-
-    public static void saveGrade(String subject,
-                                 double series1,
-                                 double series2,
-                                 double semesterExam) {
-
-        String sql = """
-            INSERT OR REPLACE INTO grades
-            (subject, series1, series2, semester_exam)
-            VALUES (?, ?, ?, ?)
-            """;
-
-        try (Connection conn = DatabaseManager.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, subject);
-            pstmt.setDouble(2, series1);
-            pstmt.setDouble(3, series2);
-            pstmt.setDouble(4, semesterExam);
-
-            pstmt.executeUpdate();
-
-            System.out.println("Grade saved successfully.");
-
-        } catch (Exception e) {
-            e.printStackTrace();}}}
+public class DatabaseGrade extends JPanel {
+    private final boolean editable; private JTable table;
+    public DatabaseGrade(boolean editable){this.editable=editable;setLayout(new BorderLayout(8,8));setBorder(BorderFactory.createEmptyBorder(12,12,12,12));JPanel actions=new JPanel(new FlowLayout(FlowLayout.LEFT));JButton refresh=new JButton("Refresh");refresh.addActionListener(e->load());actions.add(refresh);if(editable){JButton edit=new JButton("Edit selected marks");edit.addActionListener(e->edit());actions.add(edit);}add(actions,BorderLayout.NORTH);table=new JTable();add(new JScrollPane(table),BorderLayout.CENTER);load();}
+    private void load(){try{java.util.List<String[]> rows=new ArrayList<>();String sql="SELECT g.id,s.code,s.name,g.cie,g.ese,g.target_grade,(g.cie+g.ese) total FROM grades g JOIN subjects s ON s.id=g.subject_id ORDER BY s.code";try(Connection c=Database.getConnection();Statement st=c.createStatement();ResultSet r=st.executeQuery(sql)){while(r.next())rows.add(new String[]{r.getString("id"),r.getString("code"),r.getString("name"),r.getString("cie"),r.getString("ese"),r.getString("target_grade"),r.getString("total"),GradeCalc.grade(r.getDouble("total"))});}setTable(new String[]{"ID","Code","Subject","CIE /40","ESE /60","Target","Total /100","Calculated grade"},rows);}catch(Exception e){error(e);}}
+    private void setTable(String[] cols,java.util.List<String[]> rows){JScrollPane old=(JScrollPane)getComponent(1);table=TableRender.table(cols,rows);remove(old);add(new JScrollPane(table),BorderLayout.CENTER);revalidate();repaint();}
+    private void edit(){String id=TableRender.selectedId(table);if(id==null){JOptionPane.showMessageDialog(this,"Select a row first.");return;}int row=table.convertRowIndexToModel(table.getSelectedRow());JTextField cie=new JTextField(String.valueOf(table.getModel().getValueAt(row,3))),ese=new JTextField(String.valueOf(table.getModel().getValueAt(row,4)));JComboBox<String> target=new JComboBox<>(new String[]{"S","A+","A","B+","B","C","P","F"});target.setSelectedItem(String.valueOf(table.getModel().getValueAt(row,5)));Object[] form={"CIE marks (0–40)",cie,"ESE marks (0–60)",ese,"Target grade",target};if(JOptionPane.showConfirmDialog(this,form,"Update grade",JOptionPane.OK_CANCEL_OPTION)!=JOptionPane.OK_OPTION)return;try{double cv=Double.parseDouble(cie.getText()),ev=Double.parseDouble(ese.getText());if(cv<0||cv>40||ev<0||ev>60)throw new IllegalArgumentException("CIE must be 0–40 and ESE must be 0–60.");try(Connection c=Database.getConnection();PreparedStatement p=c.prepareStatement("UPDATE grades SET cie=?,ese=?,target_grade=? WHERE id=?")){p.setDouble(1,cv);p.setDouble(2,ev);p.setString(3,(String)target.getSelectedItem());p.setInt(4,Integer.parseInt(id));p.executeUpdate();}load();}catch(Exception e){error(e);}}
+    private void error(Exception e){JOptionPane.showMessageDialog(this,e.getMessage(),"Grades",JOptionPane.ERROR_MESSAGE);}
+}
